@@ -24,10 +24,17 @@ get_probs = function(X0,delta0, Z0, t0){
   }
   dt=data.frame(time=X0,event=delta0,Z1=Z0[,1],Z2=Z0[,2],Z3=Z0[,3],Z4=Z0[,4],Z5=Z0[,5],Z6=Z0[,6])
   
-  ids=1:length(X0)
-    ndim = length(X0)-length(ids)
+  ids=NULL
+  ids[[1]]=1:394
+  ids[[2]]=395:788
+  ids[[3]]=789:1182
+  ids[[4]]=1183:1577
+  ids[[5]]=1578:nrow(Z0)
+  p11=p21=p31=p12=p22=p32=NULL
+  for(cv_num in 1:5){
+    ndim = length(X0)-length(ids[[cv_num]])
     npts = length(t0)
-    survival=dt[-ids,]
+    survival=dt[-ids[[cv_num]],]
     
     splines=function(data,ndim.splines=6){
       names(data)=c('t','cause','Z1','Z2','Z3','Z4','Z5','Z6')
@@ -128,13 +135,14 @@ get_probs = function(X0,delta0, Z0, t0){
       b22=theta[19] 
       b23=theta[20] 
       b24=theta[21] 
+      b25=theta[22] 
       
       A1=beta11*spline11+ beta12*spline12+ beta13*spline13+ beta14*spline14+ beta15*spline15+ beta16*spline16
       A2=beta21*spline21+ beta22*spline22+ beta23*spline23+ beta24*spline24+ beta25*spline25+ beta26*spline26
       A1diff=beta11*splinediff11+ beta12*splinediff12+ beta13*splinediff13+ beta14*splinediff14+ beta15*splinediff15+ beta16*splinediff16
       A2diff=beta21*splinediff21+ beta22*splinediff22+ beta23*splinediff23+ beta24*splinediff24+ beta25*splinediff25+ beta26*splinediff26
       E1=exp(A1+b11*Z1+b12*Z2+b13*Z3+b14*Z4+b15*Z6)
-      E2=exp(A2+b21*Z1+b22*Z2+b23*Z3+b24*Z4)
+      E2=exp(A2+b21*Z1+b22*Z2+b23*Z3+b24*Z4+b25*Z6)
       ll=0
       for(k in 1:length(event)){
         if( event[k]==1 ) 
@@ -165,28 +173,28 @@ get_probs = function(X0,delta0, Z0, t0){
                   0,0,0,0,0,0,0,0,0,0,-1,1,0,0,0,0,0,0
     ), 10, 18,byrow = TRUE)
     B <- rep(0,10)
-    res=maxBFGS(f, start=c(-2,-1,0,1,2,3,-2,-1,0,1,2,3,0,0,0,0,0,0),constraints=list(ineqA=A, ineqB=B),control=list(printLevel=1))
+    res=maxBFGS(f, start=c(-2,-1,0,1,2,3,-2,-1,0,1,2,3,0,0,0,0,0,0),constraints=list(ineqA=A, ineqB=B))
     
     
     
-    A2 <- matrix(c(-1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-                   0,-1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-                   0,0,-1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-                   0,0,0,-1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-                   0,0,0,0,-1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-                   0,0,0,0,0,0,-1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,
-                   0,0,0,0,0,0,0,-1,1,0,0,0,0,0,0,0,0,0,0,0,0,
-                   0,0,0,0,0,0,0,0,-1,1,0,0,0,0,0,0,0,0,0,0,0,
-                   0,0,0,0,0,0,0,0,0,-1,1,0,0,0,0,0,0,0,0,0,0,
-                   0,0,0,0,0,0,0,0,0,0,-1,1,0,0,0,0,0,0,0,0,0
-    ), 10, 21,byrow = TRUE)
+    A2 <- matrix(c(-1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+                   0,-1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+                   0,0,-1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+                   0,0,0,-1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+                   0,0,0,0,-1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+                   0,0,0,0,0,0,-1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+                   0,0,0,0,0,0,0,-1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,
+                   0,0,0,0,0,0,0,0,-1,1,0,0,0,0,0,0,0,0,0,0,0,0,
+                   0,0,0,0,0,0,0,0,0,-1,1,0,0,0,0,0,0,0,0,0,0,0,
+                   0,0,0,0,0,0,0,0,0,0,-1,1,0,0,0,0,0,0,0,0,0,0
+    ), 10, 22,byrow = TRUE)
     B2 <- rep(0,10)
-    res2=maxBFGS(f2, start=c(-2,-1,0,1,2,3,-2,-1,0,1,2,3,0,0,0,0,0,0,0,0,0),constraints=list(ineqA=A2, ineqB=B2),control=list(printLevel=1))
+    res2=maxBFGS(f2, start=c(-2,-1,0,1,2,3,-2,-1,0,1,2,3,0,0,0,0,0,0,0,0,0,0),constraints=list(ineqA=A2, ineqB=B2))
     
     
     
     cif=function(t0){
-      dt2=dt[ids,]
+      dt2=dt[ids[[cv_num]],]
       pars2=summary(res)[["estimate"]][,1]
       pars3=summary(res2)[["estimate"]][,1]
       B11=B12=B21=B22=NULL
@@ -204,16 +212,16 @@ get_probs = function(X0,delta0, Z0, t0){
         B21=c(B21,sum(A1*pars3[1:6]))
         B22=c(B22,sum(A2*pars3[7:12]))
       }
-      cvr21=rep(as.matrix(dt[ids,c('Z1','Z2','Z4')])%*%pars2[13:15],length(t0))
-      cvr22=rep(as.matrix(dt[ids,c('Z1','Z2','Z4')])%*%pars2[16:18],length(t0))
-      cvr31=rep(as.matrix(dt[ids,c('Z1','Z2','Z3','Z4','Z6')])%*%pars3[13:17],length(t0))
-      cvr32=rep(as.matrix(dt[ids,c('Z1','Z2','Z3','Z4')])%*%pars3[18:21],length(t0))
+      cvr21=rep(as.matrix(dt[ids[[cv_num]],c('Z1','Z2','Z4')])%*%pars2[13:15],length(t0))
+      cvr22=rep(as.matrix(dt[ids[[cv_num]],c('Z1','Z2','Z4')])%*%pars2[16:18],length(t0))
+      cvr31=rep(as.matrix(dt[ids[[cv_num]],c('Z1','Z2','Z3','Z4','Z6')])%*%pars3[13:17],length(t0))
+      cvr32=rep(as.matrix(dt[ids[[cv_num]],c('Z1','Z2','Z3','Z4','Z6')])%*%pars3[18:22],length(t0))
       
-      F21=matrix(exp(rep(B11,each=length(ids))+cvr21)/(1+exp(rep(B11,each=length(ids))+cvr21)+exp(rep(B12,each=length(ids))+cvr22)),ncol=length(t0))
-      F22=matrix(exp(rep(B12,each=length(ids))+cvr22)/(1+exp(rep(B11,each=length(ids))+cvr21)+exp(rep(B12,each=length(ids))+cvr22)),ncol=length(t0))
+      F21=matrix(exp(rep(B11,each=length(ids[[cv_num]]))+cvr21)/(1+exp(rep(B11,each=length(ids[[cv_num]]))+cvr21)+exp(rep(B12,each=length(ids[[cv_num]]))+cvr22)),ncol=length(t0))
+      F22=matrix(exp(rep(B12,each=length(ids[[cv_num]]))+cvr22)/(1+exp(rep(B11,each=length(ids[[cv_num]]))+cvr21)+exp(rep(B12,each=length(ids[[cv_num]]))+cvr22)),ncol=length(t0))
       
-      F31=matrix(exp(rep(B21,each=length(ids))+cvr31)/(1+exp(rep(B21,each=length(ids))+cvr31)+exp(rep(B22,each=length(ids))+cvr32)),ncol=length(t0))
-      F32=matrix(exp(rep(B22,each=length(ids))+cvr32)/(1+exp(rep(B21,each=length(ids))+cvr31)+exp(rep(B22,each=length(ids))+cvr32)),ncol=length(t0))
+      F31=matrix(exp(rep(B21,each=length(ids[[cv_num]]))+cvr31)/(1+exp(rep(B21,each=length(ids[[cv_num]]))+cvr31)+exp(rep(B22,each=length(ids[[cv_num]]))+cvr32)),ncol=length(t0))
+      F32=matrix(exp(rep(B22,each=length(ids[[cv_num]]))+cvr32)/(1+exp(rep(B21,each=length(ids[[cv_num]]))+cvr31)+exp(rep(B22,each=length(ids[[cv_num]]))+cvr32)),ncol=length(t0))
       return(list(F21,F22,1-F21-F22,F31,F32,1-F31-F32))
     }
     
@@ -221,13 +229,21 @@ get_probs = function(X0,delta0, Z0, t0){
     npts=length(t0)
     
     cifs=cif(t0)
-    # p1.hat.m1=cifs[[1]]
-    # p2.hat.m1=cifs[[2]]
-    # p3.hat.m1=cifs[[3]]
-    # p1.hat.m2=cifs[[4]]
-    # p2.hat.m2=cifs[[5]]
-    # p3.hat.m2=cifs[[6]]
-  return(cifs)
+    p1.hat.m1=cifs[[1]]
+    p2.hat.m1=cifs[[2]]
+    p3.hat.m1=cifs[[3]]
+    p1.hat.m2=cifs[[4]]
+    p2.hat.m2=cifs[[5]]
+    p3.hat.m2=cifs[[6]]
+    p11=rbind(p11,p1.hat.m1)
+    p21=rbind(p21,p2.hat.m1)
+    p31=rbind(p31,p3.hat.m1)
+    p12=rbind(p12,p1.hat.m2)
+    p22=rbind(p22,p2.hat.m2)
+    p32=rbind(p32,p3.hat.m2)
+    cat(cv_num,'\n')
+  }
+  return(list(p11,p21,p31,p12,p22,p32))
   
 }
 estNRI_Gerds = function(X,delta, Z, t0, withsd)
@@ -348,8 +364,91 @@ estNRI_Gerds = function(X,delta, Z, t0, withsd)
       estsd=c(estsd,sqrt(mean(IF^2)))
     }
   }
+  # first time pt
+  den1.t1 = ifelse(X<=t0[1] & delta ==1,1,0)/est.S.censoring
+  den1.t1 = ifelse(den1.t1=='NaN',0,den1.t1)
   
-  return(cbind(estNRI,estsd))
+  
+  den2.t1 = ifelse(X<=t0[1] & delta ==2,1,0)/est.S.censoring
+  den2.t1 = ifelse(den2.t1=='NaN',0,den2.t1)
+  
+  censor.t1 = max(which(sort(X) <=t0[1]))
+  den3.t1 = ifelse(X>t0[1],1,0)/censor.S1[censor.t1+1]
+  den3.t1 = ifelse(den3.t1=='NaN',0,den3.t1)
+  
+  
+  den.t1 = c(sum(den1.t1), sum(den2.t1), sum(den3.t1))
+  n.t1 = sum(den.t1)
+  pi.t1 = den.t1/ndim
+  
+  
+  pp.m2.t1 = cbind(p1.hat.m2[,1],p2.hat.m2[,1], p3.hat.m2[,1])
+  pp.m1.t1 = cbind(p1.hat.m1[,1],p2.hat.m1[,1], p3.hat.m1[,1])
+  
+  
+  num.t1.d1 = (pp.m1.t1 - matrix(rep(apply(pp.m1.t1,2,mean),ndim),ndim,3,byrow=TRUE))^2
+  num.t1.d2 = (pp.m2.t1 - matrix(rep(apply(pp.m2.t1,2,mean),ndim),ndim,3,byrow=TRUE))^2
+  
+  num.t1 = apply(num.t1.d2-num.t1.d1,2,mean)
+  estIDI.t1 = mean(num.t1/pi.t1/(1-pi.t1))
+  
+  
+  # second time point
+  den1.t2 = ifelse(X<=t0[2] & delta ==1,1,0)/est.S.censoring
+  den1.t2 = ifelse(den1.t2=='NaN',0,den1.t2)
+  
+  
+  den2.t2 = ifelse(X<=t0[2] & delta ==2,1,0)/est.S.censoring
+  den2.t2 = ifelse(den2.t2=='NaN',0,den2.t2)
+  
+  censor.t2 = max(which(sort(X) <=t0[2]))
+  den3.t2 = ifelse(X>t0[2],1,0)/censor.S1[censor.t2+1]
+  den3.t2 = ifelse(den3.t2=='NaN',0,den3.t2)
+  
+  
+  den.t2 = c(sum(den1.t2), sum(den2.t2), sum(den3.t2))
+  n.t2 = sum(den.t2)
+  pi.t2 = den.t2/ndim
+  
+  
+  pp.m2.t2 = cbind(p1.hat.m2[,2],p2.hat.m2[,2], p3.hat.m2[,2])
+  pp.m1.t2 = cbind(p1.hat.m1[,2],p2.hat.m1[,2], p3.hat.m1[,2])
+  
+  
+  num.t2.d1 = (pp.m1.t2 - matrix(rep(apply(pp.m1.t2,2,mean),ndim),ndim,3,byrow=TRUE))^2
+  num.t2.d2 = (pp.m2.t2 - matrix(rep(apply(pp.m2.t2,2,mean),ndim),ndim,3,byrow=TRUE))^2
+  
+  num.t2 = apply(num.t2.d2-num.t2.d1,2,mean)
+  estIDI.t2 = mean(num.t2/pi.t2/(1-pi.t2))
+  
+  # third time point
+  den1.t3 = ifelse(X<=t0[3] & delta ==1,1,0)/est.S.censoring
+  den1.t3 = ifelse(den1.t3=='NaN',0,den1.t3)
+  
+  
+  den2.t3 = ifelse(X<=t0[3] & delta ==2,1,0)/est.S.censoring
+  den2.t3 = ifelse(den2.t3=='NaN',0,den2.t3)
+  
+  censor.t3 = max(which(sort(X) <=t0[3]))
+  den3.t3 = ifelse(X>t0[3],1,0)/censor.S1[censor.t3+1]
+  den3.t3 = ifelse(den3.t3=='NaN',0,den3.t3)
+  
+  
+  den.t3 = c(sum(den1.t3), sum(den2.t3), sum(den3.t3))
+  n.t3 = sum(den.t3)
+  pi.t3 = den.t3/ndim
+  
+  
+  pp.m2.t3 = cbind(p1.hat.m2[,3],p2.hat.m2[,3], p3.hat.m2[,3])
+  pp.m1.t3 = cbind(p1.hat.m1[,3],p2.hat.m1[,3], p3.hat.m1[,3])
+  
+  num.t3.d1 = (pp.m1.t3 - matrix(rep(apply(pp.m1.t3,2,mean),ndim),ndim,3,byrow=TRUE))^2
+  num.t3.d2 = (pp.m2.t3 - matrix(rep(apply(pp.m2.t3,2,mean),ndim),ndim,3,byrow=TRUE))^2
+  
+  num.t3 = apply(num.t3.d2-num.t3.d1,2,mean)
+  estIDI.t3 = mean(num.t3/pi.t3/(1-pi.t3))
+  
+  return(cbind(estNRI,c(estIDI.t1, estIDI.t2, estIDI.t3),estsd))
   
 }
 
@@ -360,23 +459,96 @@ ndim=nrow(DATA)
 t0 = c(8,10,12)
 ests=estNRI_Gerds(DATA$t,DATA$indicator,scale(DATA[,4:9]), t0, TRUE)
 NRI = t(ests[,1])
-NRI_sd = t(ests[,2])
-NRI
-NRI_sd/sqrt(ndim)
-NRI-qnorm(0.975)*NRI_sd/sqrt(ndim)
-NRI+qnorm(0.975)*NRI_sd/sqrt(ndim)
-# > NRI
-# [,1]       [,2]       [,3]
-# [1,] 0.003704009 0.02449719 0.07012361
-# > NRI_sd/sqrt(ndim)
-# [,1]        [,2]        [,3]
-# [1,] 0.002953686 0.006729596 0.008005415
-# > NRI-qnorm(0.975)*NRI_sd/sqrt(ndim)
-# [,1]       [,2]       [,3]
-# [1,] -0.00208511 0.01130743 0.05443329
-# > NRI+qnorm(0.975)*NRI_sd/sqrt(ndim)
-# [,1]       [,2]       [,3]
-# [1,] 0.009493128 0.03768696 0.08581394
+IDI = t(ests[,2])
+# NRI_sd = t(ests[,3])
+# NRI
+# NRI_sd/sqrt(ndim)
+# NRI-qnorm(0.975)*NRI_sd/sqrt(ndim)
+# NRI+qnorm(0.975)*NRI_sd/sqrt(ndim)
+
+nboot=1000
+
+gene=function(s){
+  DATA=read.csv("C:\\Users\\Zander Wang\\Box\\ZhengWang\\MACS\\Legacy\\survivaldata.csv")
+  ndim=nrow(DATA) 
+  set.seed(2020)
+  seeds=floor(runif(1000000,1,100000000))
+  set.seed(seeds[s])
+  index = sample(1:ndim, ndim, replace=TRUE)
+  DATA.boot = DATA[index,]
+  t0 = c(8,10,12)
+  temp=try(estNRI_Gerds(DATA.boot$t,DATA.boot$indicator,scale(DATA.boot[,4:9]), t0, FALSE))
+  if(class(temp)=="try-error") return(NULL)
+  return(temp)
+}
+library(parallel)
+no_cores <- detectCores()
+
+# Setup cluster
+clust <- makeCluster(no_cores) #This line will take time
+clusterExport(clust, c("estNRI_Gerds","get_probs","maxBFGS"))
+#The parallel version of lapply() is parLapply() and needs an additional cluster argument.
+boot.est=parLapply(clust,1:nboot, gene)
+
+stopCluster(clust)
 
 
+boot.NRI=matrix(unlist(lapply(boot.est,function(v) v[,1])),nrow=3)
+
+boot.IDI=matrix(unlist(lapply(boot.est,function(v) v[,2])),nrow=3)
+
+gene=function(s){
+  DATA=read.csv("C:\\Users\\Zander Wang\\Box\\ZhengWang\\MACS\\Legacy\\survivaldata.csv")
+  DATA.boot = DATA[-s,]
+  set.seed(2020)
+  seeds=floor(runif(1000000,1,100000000))
+  set.seed(seeds[s])
+  DATA.boot=DATA.boot[sample(1:nrow(DATA.boot)),]
+  t0 = c(8,10,12)
+  temp=try(estNRI_Gerds(DATA.boot$t,DATA.boot$indicator,scale(DATA.boot[,4:9]), t0, FALSE))
+  if(class(temp)=="try-error") return(NULL)
+  return(temp)
+}
+no_cores <- detectCores()
+
+# Setup cluster
+clust <- makeCluster(no_cores) #This line will take time
+clusterExport(clust, c("estNRI_Gerds","get_probs","maxBFGS"))
+#The parallel version of lapply() is parLapply() and needs an additional cluster argument.
+jack.est=parLapply(clust,1:nrow(DATA), gene)
+
+stopCluster(clust)
+
+
+jack.NRI=matrix(unlist(lapply(jack.est,function(v) v[,1])),nrow=3)
+
+jack.IDI=matrix(unlist(lapply(jack.est,function(v) v[,2])),nrow=3)
+
+z0.hat=qnorm(colMeans(t(boot.NRI)<matrix(rep(t(NRI),each=1000),ncol=3)))
+theta0.hat=apply(jack.NRI,1,mean)
+temp=-t(jack.NRI)+matrix(rep(theta0.hat,each=ncol(jack.NRI)),ncol=3)
+a.hat=colSums(temp^3)/6/colSums(temp^2)^(1.5)
+alpha1=pnorm(z0.hat+(z0.hat+qnorm(0.025))/(1-a.hat*(z0.hat+qnorm(0.025))))
+alpha2=pnorm(z0.hat+(z0.hat+qnorm(0.975))/(1-a.hat*(z0.hat+qnorm(0.975))))
+res=rbind(c(quantile(boot.NRI[1,],alpha1[1]),quantile(boot.NRI[2,],alpha1[2]),quantile(boot.NRI[3,],alpha1[3])),
+          c(quantile(boot.NRI[1,],alpha2[1]),quantile(boot.NRI[2,],alpha2[2]),quantile(boot.NRI[3,],alpha2[3])),
+          c(quantile(boot.NRI[1,],0.025),quantile(boot.NRI[2,],0.025),quantile(boot.NRI[3,],0.025)),
+          c(quantile(boot.NRI[1,],0.975),quantile(boot.NRI[2,],0.975),quantile(boot.NRI[3,],0.975)),
+          NRI)
+
+
+z0.hat=qnorm(colMeans(t(boot.IDI)<matrix(rep(t(IDI),each=1000),ncol=3)))
+theta0.hat=apply(jack.IDI,1,mean)
+temp=-t(jack.IDI)+matrix(rep(theta0.hat,each=ncol(jack.IDI)),ncol=3)
+a.hat=colSums(temp^3)/6/colSums(temp^2)^(1.5)
+alpha1=pnorm(z0.hat+(z0.hat+qnorm(0.025))/(1-a.hat*(z0.hat+qnorm(0.025))))
+alpha2=pnorm(z0.hat+(z0.hat+qnorm(0.975))/(1-a.hat*(z0.hat+qnorm(0.975))))
+res=rbind(res,
+          c(quantile(boot.IDI[1,],alpha1[1]),quantile(boot.IDI[2,],alpha1[2]),quantile(boot.IDI[3,],alpha1[3])),
+          c(quantile(boot.IDI[1,],alpha2[1]),quantile(boot.IDI[2,],alpha2[2]),quantile(boot.IDI[3,],alpha2[3])),
+          c(quantile(boot.IDI[1,],0.025),quantile(boot.IDI[2,],0.025),quantile(boot.IDI[3,],0.025)),
+          c(quantile(boot.IDI[1,],0.975),quantile(boot.IDI[2,],0.975),quantile(boot.IDI[3,],0.975)),
+          IDI)
+
+write.csv(res,"E:Gerds_macs.csv")
 
